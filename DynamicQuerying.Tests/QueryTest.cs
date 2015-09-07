@@ -123,7 +123,6 @@ namespace DynamicQuerying.Tests
             Query query = new Query();
             query.Add(Criterion.Create<Products>(t => t.ProductNumber, "ads", CriteriaOperator.Contain));
             const int expected = 1;
-
             Assert.AreEqual(expected, _products.TranslateIntoEFQuery(query).Count());
         }
 
