@@ -1,0 +1,48 @@
+﻿public IList<Invoices> FindAll(InvoiceSearchHelper invoiceSearch)
+{
+    var query = SetupQuery(invoiceSearch);
+    return _repository.FindAll(query).ToList();
+}
+
+private static Query SetupQuery(InvoiceSearchHelper invoiceSearch)
+{
+    Query query = new Query();
+    if (invoiceSearch.Invoices.PaymentStatus != PaymentStatus.Any)
+        query.Add(new Criterion("LU_PaymentStatus_Id", (int)invoiceSearch.Invoices.PaymentStatus,
+                                CriteriaOperator.Equal));
+
+    if (!string.IsNullOrEmpty(invoiceSearch.Invoices.Invoice_Method))
+        query.Add(new Criterion("Invoice_Method", invoiceSearch.Invoices.Invoice_Method, CriteriaOperator.Equal));
+
+    if (invoiceSearch.Invoices.BatchAmount > 0)
+        query.Add(new Criterion("BatchAmount", invoiceSearch.Invoices.BatchAmount, CriteriaOperator.Equal));
+
+    if (invoiceSearch.Invoices.Batch_Id > 0)
+        query.Add(new Criterion("Batch_Id", invoiceSearch.Invoices.Batch_Id, CriteriaOperator.Equal));
+
+    if (invoiceSearch.Invoices.Client_Data != null && invoiceSearch.Invoices.Client_Data.Companies_Id > 0)
+        query.Add(new Criterion("Client_Data.Companies_Id", invoiceSearch.Invoices.Client_Data.Companies_Id, CriteriaOperator.Equal));
+    return query;
+}
+
+public IEnumerable<Invoices> FindAll(Query query)
+{
+    using (db = new Context())
+		return db.Invoices.Include(b => b.Client_Data.Company).TranslateIntoEFQuery(query).ToList();
+}
+
+private static void Parameters()
+{
+    QueryGrouping queryGrouping = new QueryGrouping(2);
+    Query query = new Query(QueryOperator.And);
+    query.Add(new Criterion("Color", "Black", CriteriaOperator.Contain));
+    query.Add(new Criterion("ProductId", 743, CriteriaOperator.GreatedThanOrEquat));
+    queryGrouping.AddQueryGroup(query, QueryOperator.And);
+
+    Query query2 = new Query(QueryOperator.Or);
+    query2.Add(new Criterion("Size", 58, CriteriaOperator.GreatedThanOrEquat));
+    query2.Add(new Criterion("Size", 62, CriteriaOperator.LesserThanOrEqual));
+    queryGrouping.AddLastQueryGroup(query2);
+
+    string result2 = QueryTranslator.TranslateIntoSqlQuery(queryGrouping, PRODUCT_SCRIPT);
+}
